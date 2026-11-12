@@ -7,7 +7,7 @@ This file records what was actually configured and tested. Update entries after 
 ### Step 1: Resource group
 
 - **Resource group:** `rg-contoso-cloud-lab`
-- **Region:** South Central US
+- **Region:** Central US
 - **Tags:** Environment=Lab; Project=EnterpriseCloud; Owner=CloudEngineering; ManagedBy=Jay
 - **Result:** User confirmed the resource group was created and empty.
 
