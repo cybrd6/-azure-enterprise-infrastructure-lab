@@ -97,3 +97,14 @@ This file records what was actually configured and tested. Update entries after 
 - No public IP, public inbound ports, NAT Gateway, or load balancer was configured for this VM.
 - Do not assume outbound internet connectivity is available. Validate the actual network behavior before relying on Windows Update or VM-agent-dependent actions.
 - Do not treat a zero or incomplete Cost Analysis view immediately after deployment as proof of zero charges; Azure cost data can be delayed.
+
+
+## Next-session checkpoint — Terraform adoption preparation
+
+- **Decision:** Continue the existing Azure lab with Terraform rather than rebuilding the environment.
+- **Repository preparation:** Added `documentation/terraform-adoption-plan.md` and updated the README and role-alignment roadmap.
+- **Terraform status:** Not installed or initialized as part of this project yet. No Terraform state exists in the repository, and no Azure resources have been imported or modified by Terraform.
+- **Next action:** Install/verify Terraform and Azure CLI on the workstation, authenticate to the intended Azure subscription, then inventory the live resource IDs and configuration.
+- **Preservation requirement:** Import the existing resource group, VNet, subnets, NSGs, and VM-related resources into Terraform only after matching configuration has been authored. Do not recreate resources.
+- **Safety gate:** Run and inspect `terraform plan`; do not apply any plan that proposes unexpected replacement, deletion, or disruptive changes.
+- **VM state:** Last confirmed stopped (deallocated). Keep it deallocated while preparing Terraform unless a later validation task requires it.
