@@ -19,7 +19,15 @@ Create a virtual network with separate application and management subnets. Apply
 | `nsg-app` | `sn-app` | Created and associated |
 | `nsg-mgmt` | `sn-mgmt` | Created and associated |
 
-The user confirmed that both NSGs are associated with their matching subnets. Custom security rules have not yet been added or tested.
+The user confirmed that both NSGs are associated with their matching subnets. Both NSGs were inspected and the user confirmed only Azure default rules were present; no custom rules were added.
+
+## Deployed workload network placement
+
+| Workload | Subnet | Private IP observed | Public IP | NSG |
+|---|---|---|---|---|
+| `vm-mgmt-01` (Windows Server 2025 Datacenter: Azure Edition) | `sn-mgmt` | `10.10.2.4` | None | `nsg-mgmt` |
+
+The VM NIC uses the existing management NSG. Accelerated networking is enabled because the selected `Standard_D2as_v7` size requires it. No load balancer is configured.
 
 ## Configuration decisions
 
@@ -28,7 +36,8 @@ The user confirmed that both NSGs are associated with their matching subnets. Cu
 - **Subnet size:** `/24` for each subnet.
 - **NAT Gateway:** None planned, to avoid adding a paid networking service to this small lab.
 - **IPv6:** Not enabled for the initial build.
-- **Administrative access:** Do not expose RDP (TCP 3389) or SSH (TCP 22) to all internet addresses.
+- **Administrative access:** Public inbound ports are set to None; no public IP is assigned. Do not expose RDP (TCP 3389) or SSH (TCP 22) to all internet addresses.
+- **Outbound connectivity:** Not yet validated. No NAT Gateway or public IP was configured; verify Azure outbound connectivity behavior and choose a cost-conscious method before relying on internet access from the VM.
 
 ## Definitions
 
@@ -51,7 +60,7 @@ The user confirmed that both NSGs are associated with their matching subnets. Cu
 - [x] Confirm both subnets exist in the VNet (user-confirmed).
 - [x] Create `nsg-app` and associate it with `sn-app` (user-confirmed).
 - [x] Create `nsg-mgmt` and associate it with `sn-mgmt` (user-confirmed).
-- [ ] Review default and custom NSG rules.
+- [x] Inspect both NSGs; user confirmed only default rules were present.
 - [ ] Validate intended traffic behavior after a workload is deployed.
 - [ ] Capture sanitized screenshots of the VNet, subnet, and NSG association pages.
 
