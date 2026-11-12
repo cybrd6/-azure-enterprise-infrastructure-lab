@@ -7,7 +7,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 > **Primary region:** Central US  
 > **Resource group:** `rg-contoso-cloud-lab`  
 > **Primary platform:** Microsoft Azure  
-> **Infrastructure as Code (IaC):** Terraform adoption planned for existing resources  
+> **Infrastructure as Code (IaC):** Terraform adoption in progress  
 > **Cost constraint:** Keep the lab within the available trial-credit budget; avoid unnecessary paid services.
 
 ## Project objectives
@@ -30,7 +30,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 | 1 | Foundation, resource group, budget guardrails, architecture | Resource group, tags, cost plan | Complete |
 | 2 | VNet, subnets, NSGs, network validation | Address plan, effective rules, connectivity tests | Configuration complete; traffic validation pending |
 | 3 | Windows Server workload and secure administration | VM configuration, patch state, restricted admin access | VM deployed and deallocated; administration and hardening pending |
-| 3A | Terraform adoption of existing Azure infrastructure | Terraform configuration, imported state, clean plan | Planned — next session |
+| 3A | Terraform adoption of existing Azure infrastructure | Terraform configuration, imported state, clean plan | In progress — CLI authenticated, provider initialized, resource group import initiated |
 | 4 | Entra ID, Azure RBAC, least privilege | Role assignments and access tests | Planned |
 | 5 | Secure Azure Storage | Public-access restrictions, authorization and encryption review | Planned |
 | 6 | Logging, monitoring, and security investigation | Diagnostic settings, Log Analytics queries, alert evidence | Planned |
@@ -39,7 +39,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 | 9 | Security baseline and compliance review | Azure Policy/Defender recommendations review and control matrix | Planned |
 | 10 | PowerShell, IaC refinement, final validation, and portfolio publication | Reusable code, diagrams, evidence, lessons learned | Planned |
 
-The Terraform adoption phase is an additional step: it is intended to bring existing resources under code management, not recreate the Azure environment. No Terraform import or apply has been performed yet.
+Terraform adoption is intended to bring existing resources under code management, not recreate the Azure environment. The resource group import command has been initiated; successful completion and state verification are pending. No Terraform apply has been performed.
 
 ## Current environment
 
@@ -55,10 +55,21 @@ The Terraform adoption phase is an additional step: it is intended to bring exis
 | Management NSG | `nsg-mgmt`, associated with `sn-mgmt` |
 | Windows Server VM | `vm-mgmt-01`, Windows Server 2025 Datacenter: Azure Edition |
 | VM size | `Standard_D2as_v7` — 2 vCPUs, 8 GiB RAM |
-| VM power state at end of latest session | Stopped (deallocated) |
+| VM power state at end of latest confirmed Azure session | Stopped (deallocated) |
 | Public IP / public inbound ports | None / None |
 
 The word `prod` in the VNet name is a naming choice for this simulated environment; this is a lab, not a production workload. The VM deployment showed an Azure VM Agent readiness warning, and outbound connectivity has not yet been tested. See the deployment log.
+
+## Terraform workstation progress
+
+- Terraform CLI installed and verified: v1.17.2 (Windows AMD64).
+- Azure CLI installed; command verified after adding its installation directory to the current PowerShell PATH and then the user PATH.
+- Azure CLI authenticated successfully; the single available subscription was selected.
+- Azure resource inventory and resource group properties were inspected using read-only Azure CLI commands.
+- Local Terraform configuration created: `versions.tf`, `providers.tf`, and `main.tf`.
+- AzureRM provider initialized with `terraform init`; `terraform fmt` and `terraform validate` succeeded.
+- Resource group import command initiated; completion and state verification are pending.
+- No `terraform apply` has been run. Do not commit Terraform state or credentials.
 
 ## Repository guide
 
@@ -75,6 +86,7 @@ The word `prod` in the VNet name is a naming choice for this simulated environme
 - [Diagrams](diagrams/README.md) — architecture and network diagrams.
 - [Screenshots](screenshots/README.md) — sanitized evidence from the Azure portal.
 - [Scripts](scripts/README.md) — PowerShell and future IaC automation.
+- [Terraform directory](terraform/) — local Terraform configuration and adoption work.
 
 ## Key terms
 
