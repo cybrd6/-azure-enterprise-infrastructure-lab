@@ -9,7 +9,7 @@ Build a small, segmented Azure environment to demonstrate foundational cloud inf
 The lab is organized inside one resource group:
 
 - **Resource group:** `rg-contoso-cloud-lab`
-- **Region:** South Central US
+- **Region:** Central US
 - **Virtual network:** `vnet-contoso-prod` (lab resource)
 - **Address space:** `10.10.0.0/16`
 
