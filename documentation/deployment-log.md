@@ -120,7 +120,7 @@ Inside the repository's local `terraform/` directory:
 - **Formatting:** `terraform fmt` succeeded.
 - **Validation:** `terraform validate` succeeded with a valid configuration result.
 
-### Resource group import — pending confirmation
+### Resource group import — successful
 
 The following import command was initiated:
 
@@ -130,9 +130,9 @@ terraform import azurerm_resource_group.contoso "/subscriptions/$(az account sho
 
 - **Target Terraform address:** `azurerm_resource_group.contoso`.
 - **Target Azure resource:** Existing `rg-contoso-cloud-lab`.
-- **Status:** Command was still processing at the time of this log update. Successful import and state verification have not yet been confirmed.
+- **Status:** Import completed successfully. The user confirmed `terraform state list` returned `azurerm_resource_group.contoso`.
 - **Infrastructure changes:** No `terraform apply` has been run. Import is intended to read/adopt the existing resource into Terraform state; do not describe it as a deployment.
-- **Next action:** Wait for the command to finish, confirm success, then inspect `terraform state list` and the imported resource state.
+- **Next action:** Inspect the imported resource with `terraform state show`, then run a read-only `terraform plan` to compare configuration with Azure.
 
 ### State and repository safety
 
