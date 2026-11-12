@@ -4,7 +4,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 
 > **Project status:** In progress  
 > **Environment:** Azure trial subscription  
-> **Region:** South Central US  
+> **Region:** Central US  
 > **Resource group:** `rg-contoso-cloud-lab`
 
 ## Objectives
@@ -33,7 +33,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 | Resource or setting | Configuration |
 |---|---|
 | Resource group | `rg-contoso-cloud-lab` |
-| Azure region | South Central US |
+| Azure region | Central US |
 | Virtual network name | `vnet-contoso-prod` (lab resource) |
 | Virtual network address space | `10.10.0.0/16` |
 | Planned application subnet | `sn-app` — `10.10.1.0/24` |
