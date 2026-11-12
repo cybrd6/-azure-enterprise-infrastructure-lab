@@ -15,20 +15,31 @@ This file records what was actually configured and tested. Update entries after 
 
 ### Step 2: Virtual network and subnets
 
-- **VNet name selected:** `vnet-contoso-prod`
-- **Address space entered:** `10.10.0.0/16`
-- **Application subnet entered in the portal:** `sn-app`, starting address `10.10.1.0`, size `/24`.
-- **Management subnet:** `sn-mgmt`, `10.10.2.0/24`, planned but not yet confirmed created.
-- **Last observed state:** The Azure portal screenshot showed the `sn-app` edit pane open. The “Enable private subnet (no default outbound access)” option was checked at that time. Final saved state is not yet confirmed.
+- **VNet:** `vnet-contoso-prod`
+- **Address space:** `10.10.0.0/16`
+- **Application subnet:** `sn-app`, `10.10.1.0/24`.
+- **Management subnet:** `sn-mgmt`, `10.10.2.0/24`.
+- **Result:** User confirmed both subnets are created.
 
 **Definition — Virtual network:** An isolated private network in Azure.  
 **Definition — Subnet:** A smaller IP range inside a virtual network.
 
-### Validation still required
+### Step 3: Network security groups
 
-- [ ] Save the application subnet.
-- [ ] Confirm the outbound-connectivity/private-subnet choice.
-- [ ] Create and save the management subnet.
-- [ ] Confirm both subnet ranges in the VNet.
-- [ ] Record the final VNet deployment result.
+- **Application NSG:** `nsg-app`, associated with `sn-app`.
+- **Management NSG:** `nsg-mgmt`, associated with `sn-mgmt`.
+- **Result:** User confirmed both NSGs are associated with their matching subnets.
+- **Custom rules:** Not yet configured or tested.
+- **Administrative access:** No public RDP/SSH allow rule has been intentionally added.
+
+**Definition — Network Security Group (NSG):** A stateful Azure traffic filter that allows or denies network traffic using prioritized rules.
+
+### Phase 2 validation still required
+
+- [x] Create both subnets with the planned address ranges (user-confirmed).
+- [x] Create and associate both NSGs with the matching subnets (user-confirmed).
+- [ ] Review default NSG rules and confirm no unsafe custom inbound rules exist.
+- [ ] Design only the minimum required traffic rules for the workload.
+- [ ] Test intended and denied traffic after workload deployment.
+- [ ] Capture sanitized screenshots for portfolio evidence.
 
