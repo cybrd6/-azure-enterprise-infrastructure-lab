@@ -98,13 +98,46 @@ This file records what was actually configured and tested. Update entries after 
 - Do not assume outbound internet connectivity is available. Validate the actual network behavior before relying on Windows Update or VM-agent-dependent actions.
 - Do not treat a zero or incomplete Cost Analysis view immediately after deployment as proof of zero charges; Azure cost data can be delayed.
 
+## Day 3 — Terraform adoption preparation and initial import
 
-## Next-session checkpoint — Terraform adoption preparation
+### Workstation setup
 
-- **Decision:** Continue the existing Azure lab with Terraform rather than rebuilding the environment.
-- **Repository preparation:** Added `documentation/terraform-adoption-plan.md` and updated the README and role-alignment roadmap.
-- **Terraform status:** Not installed or initialized as part of this project yet. No Terraform state exists in the repository, and no Azure resources have been imported or modified by Terraform.
-- **Next action:** Install/verify Terraform and Azure CLI on the workstation, authenticate to the intended Azure subscription, then inventory the live resource IDs and configuration.
-- **Preservation requirement:** Import the existing resource group, VNet, subnets, NSGs, and VM-related resources into Terraform only after matching configuration has been authored. Do not recreate resources.
-- **Safety gate:** Run and inspect `terraform plan`; do not apply any plan that proposes unexpected replacement, deletion, or disruptive changes.
-- **VM state:** Last confirmed stopped (deallocated). Keep it deallocated while preparing Terraform unless a later validation task requires it.
+- **Terraform CLI:** v1.17.2 on Windows AMD64; version command succeeded.
+- **Azure CLI:** Installed through Windows Package Manager (winget); CLI command verified using its installed `az.cmd` path. The CLI directory was added to the current PowerShell PATH and then to the user's persistent PATH.
+- **Authentication:** `az login` completed successfully. The user has one Azure subscription and selected the default subscription.
+- **Subscription verification:** `az account show` confirmed the selected subscription was correct and enabled. Subscription identifiers are intentionally not recorded here.
+- **Resource inventory:** `az resource list` returned the expected resources in `rg-contoso-cloud-lab`. Resource group location and tags were inspected.
+- **Resource group ID:** Retrieved directly from Azure CLI; the full subscription-specific ID is intentionally not stored in this public log.
+
+### Local Terraform configuration
+
+Inside the repository's local `terraform/` directory:
+
+- `versions.tf` — declares Terraform minimum version and AzureRM provider source/version constraint (`hashicorp/azurerm`, `~> 4.0`).
+- `providers.tf` — configures the AzureRM provider with its required `features {}` block; authentication uses the Azure CLI session.
+- `main.tf` — declares `azurerm_resource_group.contoso` for the existing `rg-contoso-cloud-lab` resource in Central US.
+- **Initialization:** `terraform init` succeeded and downloaded/initialized the AzureRM provider.
+- **Formatting:** `terraform fmt` succeeded.
+- **Validation:** `terraform validate` succeeded with a valid configuration result.
+
+### Resource group import — pending confirmation
+
+The following import command was initiated:
+
+```powershell
+terraform import azurerm_resource_group.contoso "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-contoso-cloud-lab"
+```
+
+- **Target Terraform address:** `azurerm_resource_group.contoso`.
+- **Target Azure resource:** Existing `rg-contoso-cloud-lab`.
+- **Status:** Command was still processing at the time of this log update. Successful import and state verification have not yet been confirmed.
+- **Infrastructure changes:** No `terraform apply` has been run. Import is intended to read/adopt the existing resource into Terraform state; do not describe it as a deployment.
+- **Next action:** Wait for the command to finish, confirm success, then inspect `terraform state list` and the imported resource state.
+
+### State and repository safety
+
+- Terraform state is local at this stage and may contain sensitive infrastructure metadata.
+- Do not commit `terraform.tfstate`, backup state, `.terraform/`, saved plan files, credentials, or real secret-bearing variable files.
+- Add and verify a Terraform-specific `.gitignore` before committing local Terraform work.
+- No remote backend or additional Azure storage resource has been created.
+- Keep the VM deallocated while adoption work continues.
