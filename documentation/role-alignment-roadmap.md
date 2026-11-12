@@ -17,7 +17,7 @@ This document maps the lab to the responsibilities in the target Cloud Infrastru
 | On-premises systems | Existing Active Directory home lab and documented comparison to Entra ID | No integrated hybrid connection claimed |
 | Compliance/security policies | Azure Policy or security recommendation review against a small control baseline | Assessment pending |
 | Monitoring and investigation | Activity/diagnostic logs, Log Analytics, KQL investigation | Exercise pending |
-| Infrastructure as Code | Terraform CLI/provider initialized, HCL authored for existing resource group, import initiated | Import completion, full resource adoption, state protection, and clean plan pending |
+| Infrastructure as Code | Terraform CLI/provider initialized, existing resource group imported and listed in state | Detailed state inspection, full resource adoption, state protection, and clean plan pending |
 
 ## Current Azure implementation
 
@@ -40,12 +40,12 @@ The NSGs were reviewed and had only Azure default rules at that point. No custom
 - Existing resource inventory and resource group properties inspected through read-only Azure CLI commands.
 - Local Terraform files created: `versions.tf`, `providers.tf`, and `main.tf`.
 - AzureRM provider initialized successfully; formatting and validation commands succeeded.
-- Import of `azurerm_resource_group.contoso` has been initiated. Successful completion and state verification have not yet been confirmed.
+- Import of `azurerm_resource_group.contoso` completed successfully and `terraform state list` confirmed it is tracked. Detailed state inspection and plan review remain pending.
 - No Terraform apply has been run. The remaining resources must be represented accurately and imported individually; import does not generate complete HCL automatically.
 
 ## Next execution sequence
 
-1. Confirm the resource group import completed and inspect Terraform state.
+1. Inspect the imported resource with `terraform state show`, then run `terraform plan` and review for unintended changes.
 2. Protect local state with a Terraform-specific `.gitignore`; never commit state, credentials, or real secret-bearing variable files.
 3. Inspect live VNet, subnet, NSG, NIC, VM, and OS disk properties and exact resource IDs.
 4. Author matching HCL and import existing resources individually, checking dependencies and provider-specific requirements.
