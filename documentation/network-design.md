@@ -14,7 +14,7 @@ Create a virtual network with separate application and management subnets. This 
 
 ## Configuration decisions
 
-- **Region:** South Central US, matching the lab resource group.
+- **Region:** Central US, matching the lab resource group.
 - **Address space:** `10.10.0.0/16`.
 - **Subnet size:** `/24` for each planned subnet.
 - **NAT Gateway:** None planned, to avoid adding a paid networking service to this small lab.
