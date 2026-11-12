@@ -13,16 +13,16 @@ Build a small, segmented Azure environment that demonstrates infrastructure admi
 - **Application subnet:** `sn-app` — `10.10.1.0/24` (planned)
 - **Management subnet:** `sn-mgmt` — `10.10.2.0/24` (planned)
 
-The deployment log is the source of truth for what has actually been created and tested.
+The deployment log is the source of truth for what has actually been created and tested. The Windows Server 2025 VM is deployed in the management subnet with no public IP or public inbound ports. It was deallocated after deployment to stop compute charges.
 
 ## Planned architecture components
 
 | Component | Security or operational purpose | Status |
 |---|---|---|
 | Resource group and tags | Organize resources and support cost/governance tracking | Created |
-| Virtual network and subnets | Establish network boundaries and segmentation | In progress |
-| Network security groups | Restrict traffic between network zones and workloads | Planned |
-| Windows Server VM | Provide a manageable server workload for hardening and logging exercises | Planned |
+| Virtual network and subnets | Establish network boundaries and segmentation | Created; both subnets user-confirmed |
+| Network security groups | Restrict traffic between network zones and workloads | Created, associated, and default rules reviewed |
+| Windows Server VM | Provide a manageable server workload for hardening and logging exercises | Deployed; currently deallocated; guest-agent readiness and connectivity checks pending |
 | Microsoft Entra ID | Cloud identity and authentication foundation | Planned |
 | Azure RBAC | Scope administrative permissions using least privilege | Planned |
 | Azure Storage Account | Demonstrate secure data access, encryption, and public-access restrictions | Planned |
