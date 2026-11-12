@@ -7,6 +7,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 > **Primary region:** Central US  
 > **Resource group:** `rg-contoso-cloud-lab`  
 > **Primary platform:** Microsoft Azure  
+> **Infrastructure as Code (IaC):** Terraform adoption planned for existing resources  
 > **Cost constraint:** Keep the lab within the available trial-credit budget; avoid unnecessary paid services.
 
 ## Project objectives
@@ -18,27 +19,27 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 - Perform vulnerability discovery, risk prioritization, remediation, and retesting.
 - Demonstrate container image security with local Docker and Trivy scans, without deploying a paid Kubernetes cluster.
 - Assess selected configurations against baseline security recommendations and document evidence.
-- Use PowerShell and Bicep to make selected tasks repeatable.
+- Adopt the already-deployed Azure infrastructure into Terraform without rebuilding it; validate plans before making changes.
+- Use PowerShell for operational tasks. Bicep may be used for a small Azure-native comparison, but Terraform is the primary IaC learning path.
 - Relate cloud controls to the existing on-premises Active Directory home lab without claiming a production hybrid connection.
 
-## Revised project roadmap
-
-The order has been changed to establish infrastructure first, then identity and preventive controls, followed by visibility, vulnerability assessment, remediation, and final automation/evidence.
+## Project roadmap
 
 | Phase | Work | Main evidence | Status |
 |---|---|---|---|
 | 1 | Foundation, resource group, budget guardrails, architecture | Resource group, tags, cost plan | Complete |
 | 2 | VNet, subnets, NSGs, network validation | Address plan, effective rules, connectivity tests | Configuration complete; traffic validation pending |
 | 3 | Windows Server workload and secure administration | VM configuration, patch state, restricted admin access | VM deployed and deallocated; administration and hardening pending |
+| 3A | Terraform adoption of existing Azure infrastructure | Terraform configuration, imported state, clean plan | Planned — next session |
 | 4 | Entra ID, Azure RBAC, least privilege | Role assignments and access tests | Planned |
 | 5 | Secure Azure Storage | Public-access restrictions, authorization and encryption review | Planned |
 | 6 | Logging, monitoring, and security investigation | Diagnostic settings, Log Analytics queries, alert evidence | Planned |
 | 7 | Vulnerability assessment and remediation | Scan findings, risk ranking, remediation and retest | Planned |
 | 8 | Container security | Docker image scan, findings, rebuilt image and retest | Planned |
 | 9 | Security baseline and compliance review | Azure Policy/Defender recommendations review and control matrix | Planned |
-| 10 | PowerShell, Bicep, final validation, and portfolio publication | Scripts, diagrams, evidence, lessons learned | Planned |
+| 10 | PowerShell, IaC refinement, final validation, and portfolio publication | Reusable code, diagrams, evidence, lessons learned | Planned |
 
-Phases 7–9 are the most important additions for the Cloud Infrastructure Security Engineer role. They are extensions to the original infrastructure build, not claims that those activities have already been completed.
+The Terraform adoption phase is an additional step: it is intended to bring existing resources under code management, not recreate the Azure environment. No Terraform import or apply has been performed yet.
 
 ## Current environment
 
@@ -46,8 +47,8 @@ Phases 7–9 are the most important additions for the Cloud Infrastructure Secur
 |---|---|
 | Resource group | `rg-contoso-cloud-lab` |
 | Azure region | Central US |
-| Virtual network name | `vnet-contoso-prod` (lab resource) |
-| Virtual network address space | `10.10.0.0/16` |
+| Virtual network | `vnet-contoso-prod` — lab resource |
+| VNet address space | `10.10.0.0/16` |
 | Application subnet | `sn-app` — `10.10.1.0/24` |
 | Management subnet | `sn-mgmt` — `10.10.2.0/24` |
 | Application NSG | `nsg-app`, associated with `sn-app` |
@@ -57,7 +58,7 @@ Phases 7–9 are the most important additions for the Cloud Infrastructure Secur
 | VM power state at end of latest session | Stopped (deallocated) |
 | Public IP / public inbound ports | None / None |
 
-The word `prod` in the virtual network name is a naming choice for this simulated environment; this is a lab, not a production workload. See the deployment log for validation gaps and the Azure VM Agent warning that still needs investigation.
+The word `prod` in the VNet name is a naming choice for this simulated environment; this is a lab, not a production workload. The VM deployment showed an Azure VM Agent readiness warning, and outbound connectivity has not yet been tested. See the deployment log.
 
 ## Repository guide
 
@@ -66,13 +67,14 @@ The word `prod` in the virtual network name is a naming choice for this simulate
 - [Deployment log](documentation/deployment-log.md) — chronological build notes and validation evidence.
 - [Security controls](documentation/security-controls.md) — access, network, and hardening decisions.
 - [Role-alignment roadmap](documentation/role-alignment-roadmap.md) — maps project evidence to the target job requirements.
+- [Terraform adoption plan](documentation/terraform-adoption-plan.md) — safe adoption of existing resources into Terraform.
 - [Vulnerability management](documentation/vulnerability-management.md) — scan, prioritize, remediate, and retest workflow.
 - [Container security](documentation/container-security.md) — local Docker and Trivy security exercise.
 - [Storage security](documentation/storage-security.md) — Azure Storage hardening and validation.
 - [Compliance assessment](documentation/compliance-assessment.md) — baseline review and control evidence.
 - [Diagrams](diagrams/README.md) — architecture and network diagrams.
 - [Screenshots](screenshots/README.md) — sanitized evidence from the Azure portal.
-- [Scripts](scripts/README.md) — PowerShell and Bicep automation.
+- [Scripts](scripts/README.md) — PowerShell and future IaC automation.
 
 ## Key terms
 
@@ -90,7 +92,9 @@ The word `prod` in the virtual network name is a naming choice for this simulate
 - **Container image:** A packaged template used to create a container.
 - **Trivy:** An open-source scanner for vulnerabilities and other risks in container images and related artifacts.
 - **Azure Policy:** A service for evaluating and enforcing organizational rules on Azure resources.
-- **Bicep:** A declarative language for deploying Azure resources as code.
+- **Infrastructure as Code (IaC):** Managing infrastructure through declarative or programmatic configuration files.
+- **Terraform:** An IaC tool that uses configuration and state to manage resources across cloud providers.
+- **Terraform state:** Terraform's record of the resources it manages and their relationship to configuration.
 
 ## Cost and safety guardrails
 
@@ -101,7 +105,9 @@ This project is designed around a limited Azure trial-credit budget. Check estim
 - Prefer free configuration assessment features and local tools. Do not enable paid Defender plans or paid scanning tiers without checking cost and receiving an explicit decision.
 - Keep Log Analytics ingestion small; send only the data needed for the exercise and review retention settings.
 - Do not expose RDP (TCP 3389) or SSH (TCP 22) to the entire internet.
-- Never commit passwords, access tokens, private keys, connection strings, or unredacted personal, tenant, or subscription information.
+- Keep the VM deallocated when it is not actively needed. Managed disk storage may continue to incur charges.
+- Terraform import and planning do not require rebuilding the infrastructure. Never run `terraform apply` until the plan has been reviewed for unintended replacement or deletion.
+- Never commit Terraform state, passwords, access tokens, private keys, connection strings, or unredacted personal, tenant, or subscription information.
 
 ## Validation standard
 
