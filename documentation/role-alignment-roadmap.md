@@ -17,7 +17,7 @@ This document maps the lab to the responsibilities in the target Cloud Infrastru
 | On-premises systems | Existing Active Directory home lab and documented comparison to Entra ID | No integrated hybrid connection claimed |
 | Compliance/security policies | Azure Policy or security recommendation review against a small control baseline | Assessment pending |
 | Monitoring and investigation | Activity/diagnostic logs, Log Analytics, KQL investigation | Exercise pending |
-| Infrastructure as Code | Terraform configuration and import of existing Azure resources | Planned; not yet started |
+| Infrastructure as Code | Terraform CLI/provider initialized, HCL authored for existing resource group, import initiated | Import completion, full resource adoption, state protection, and clean plan pending |
 
 ## Current Azure implementation
 
@@ -29,22 +29,36 @@ The following resources have been created and user-confirmed:
 - Management subnet: `sn-mgmt`, `10.10.2.0/24`.
 - `nsg-app` associated with `sn-app`; `nsg-mgmt` associated with `sn-mgmt`.
 - Windows Server 2025 VM: `vm-mgmt-01`, private IP observed as `10.10.2.4`, no public IP, no public inbound ports.
-- VM power state at the end of the last session: stopped (deallocated).
+- VM power state at the end of the last confirmed Azure session: stopped (deallocated).
 
 The NSGs were reviewed and had only Azure default rules at that point. No custom traffic rules or successful traffic tests are claimed. The VM showed an Azure VM Agent readiness warning; outbound connectivity is unverified. These are open validation items, not completed controls.
 
+## Terraform adoption progress
+
+- Terraform v1.17.2 installed and verified on Windows AMD64.
+- Azure CLI installed and verified; authenticated to the user's single Azure subscription.
+- Existing resource inventory and resource group properties inspected through read-only Azure CLI commands.
+- Local Terraform files created: `versions.tf`, `providers.tf`, and `main.tf`.
+- AzureRM provider initialized successfully; formatting and validation commands succeeded.
+- Import of `azurerm_resource_group.contoso` has been initiated. Successful completion and state verification have not yet been confirmed.
+- No Terraform apply has been run. The remaining resources must be represented accurately and imported individually; import does not generate complete HCL automatically.
+
 ## Next execution sequence
 
-1. **Terraform adoption (Phase 3A):** install Terraform, authenticate with Azure CLI, inspect existing Azure resource IDs/configuration, write matching HCL, import existing resources, and review a read-only plan. Preserve all existing resources.
-2. **Finish Phase 3:** investigate VM Agent readiness and outbound connectivity, establish secure administration, and validate patching/hardening.
-3. **Phase 2 validation:** define minimum necessary NSG rules and test expected allowed/denied traffic.
-4. Configure Entra ID and Azure RBAC; validate least privilege.
-5. Add a Storage Account and harden access settings.
-6. Configure limited logging and perform a small KQL investigation.
-7. Perform vulnerability discovery and create a prioritized findings register.
-8. Remediate selected findings and repeat the scan.
-9. Complete a local Docker/Trivy container security exercise.
-10. Review selected Azure settings against a security baseline, then finalize automation and publish evidence.
+1. Confirm the resource group import completed and inspect Terraform state.
+2. Protect local state with a Terraform-specific `.gitignore`; never commit state, credentials, or real secret-bearing variable files.
+3. Inspect live VNet, subnet, NSG, NIC, VM, and OS disk properties and exact resource IDs.
+4. Author matching HCL and import existing resources individually, checking dependencies and provider-specific requirements.
+5. Run `terraform plan` and investigate any proposed replacement, deletion, or unexpected modification; do not apply an unsafe plan.
+6. Finish Phase 3: investigate VM Agent readiness and outbound connectivity, establish secure administration, and validate patching/hardening.
+7. Phase 2 validation: define minimum necessary NSG rules and test expected allowed/denied traffic.
+8. Configure Entra ID and Azure RBAC; validate least privilege.
+9. Add a Storage Account and harden access settings.
+10. Configure limited logging and perform a small KQL investigation.
+11. Perform vulnerability discovery and create a prioritized findings register.
+12. Remediate selected findings and repeat the scan.
+13. Complete a local Docker/Trivy container security exercise.
+14. Review selected Azure settings against a security baseline, then finalize automation and publish evidence.
 
 ## Vulnerability register template
 
