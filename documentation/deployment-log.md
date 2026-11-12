@@ -63,25 +63,37 @@ This file records what was actually configured and tested. Update entries after 
 - **Auto-shutdown:** Enabled for 2:00 AM Central Time
 - **Guest updates:** Hotpatch enabled; Azure-orchestrated patching; reboot if required
 - **Monitoring:** Recommended alert rules disabled; optional monitoring services deferred for the planned monitoring phase
+- **Identity:** System-assigned managed identity and Microsoft Entra ID VM login left disabled during initial deployment; revisit when implementing IAM.
 - **Tags:** Environment=Lab; Project=EnterpriseCloud; Owner=CloudEngineering; ManagedBy=Jay
 - **Power state at end of session:** Stopped (deallocated), confirmed in Azure portal
 - **Private IP observed:** `10.10.2.4`
 - **Public IP observed:** None
 - **Azure VM Agent:** Portal displayed “VM agent status is not ready” after deployment. Investigate after starting the VM; do not claim agent health is validated.
 - **Outbound connectivity:** Not yet tested. No public IP or NAT Gateway was configured; verify the intended outbound connectivity method before Windows Update or agent-dependent operations.
+- **Cost estimate shown during sizing:** Approximately USD $133.59/month for the selected VM size at continuous operation (portal estimate; not a statement of actual charges). Managed disk storage and any other billable resources may incur separate charges.
 
 **Definitions — Trusted Launch:** Azure VM security features that support Secure Boot and a virtual TPM.  
 **Definition — Accelerated networking:** A VM networking capability that reduces host processing overhead and can improve network performance.  
 **Definition — Deallocated:** The VM has released its compute allocation; attached managed disks can continue to incur storage charges.
 
-### Deployment validation still required
+### Deployment validation
 
 - [x] Confirm VM deployment completed and resource overview is accessible.
 - [x] Confirm VM is stopped (deallocated) after deployment.
 - [x] Confirm no public IP is assigned.
+- [x] Confirm private IP `10.10.2.4` and selected VM size from the Azure portal overview.
+- [x] Confirm the VM overview shows the expected resource group, region, subnet, and project tags.
 - [ ] Start VM and investigate Azure VM Agent readiness warning.
 - [ ] Establish and test secure administrative access without broad public exposure.
 - [ ] Verify outbound connectivity and Windows Update behavior.
 - [ ] Review Windows security baseline, patch state, and event logs.
+- [ ] Review resource group and Cost Analysis for any unexpected billable resources; cost data may be delayed.
 - [ ] Capture sanitized screenshots for portfolio evidence.
 
+### Operational and cost notes
+
+- The VM was manually stopped through Azure and the portal confirmed **Stopped (deallocated)**. This stops VM compute billing while deallocated; it does not stop managed disk storage billing or any charges from other separately billable resources.
+- Auto-shutdown is configured for 2:00 AM Central Time as a fallback. Manual verification of the deallocated power state was performed; auto-shutdown itself was not tested.
+- No public IP, public inbound ports, NAT Gateway, or load balancer was configured for this VM.
+- Do not assume outbound internet connectivity is available. Validate the actual network behavior before relying on Windows Update or VM-agent-dependent actions.
+- Do not treat a zero or incomplete Cost Analysis view immediately after deployment as proof of zero charges; Azure cost data can be delayed.
