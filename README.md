@@ -27,9 +27,9 @@ The order has been changed to establish infrastructure first, then identity and 
 
 | Phase | Work | Main evidence | Status |
 |---|---|---|---|
-| 1 | Foundation, resource group, budget guardrails, architecture | Resource group, tags, cost plan | In progress |
-| 2 | VNet, subnets, NSGs, network validation | Address plan, effective rules, connectivity tests | In progress |
-| 3 | Windows Server workload and secure administration | VM configuration, patch state, restricted admin access | Planned |
+| 1 | Foundation, resource group, budget guardrails, architecture | Resource group, tags, cost plan | Complete |
+| 2 | VNet, subnets, NSGs, network validation | Address plan, effective rules, connectivity tests | Configuration complete; traffic validation pending |
+| 3 | Windows Server workload and secure administration | VM configuration, patch state, restricted admin access | VM deployed and deallocated; administration and hardening pending |
 | 4 | Entra ID, Azure RBAC, least privilege | Role assignments and access tests | Planned |
 | 5 | Secure Azure Storage | Public-access restrictions, authorization and encryption review | Planned |
 | 6 | Logging, monitoring, and security investigation | Diagnostic settings, Log Analytics queries, alert evidence | Planned |
@@ -48,10 +48,16 @@ Phases 7–9 are the most important additions for the Cloud Infrastructure Secur
 | Azure region | Central US |
 | Virtual network name | `vnet-contoso-prod` (lab resource) |
 | Virtual network address space | `10.10.0.0/16` |
-| Planned application subnet | `sn-app` — `10.10.1.0/24` |
-| Planned management subnet | `sn-mgmt` — `10.10.2.0/24` |
+| Application subnet | `sn-app` — `10.10.1.0/24` |
+| Management subnet | `sn-mgmt` — `10.10.2.0/24` |
+| Application NSG | `nsg-app`, associated with `sn-app` |
+| Management NSG | `nsg-mgmt`, associated with `sn-mgmt` |
+| Windows Server VM | `vm-mgmt-01`, Windows Server 2025 Datacenter: Azure Edition |
+| VM size | `Standard_D2as_v7` — 2 vCPUs, 8 GiB RAM |
+| VM power state at end of latest session | Stopped (deallocated) |
+| Public IP / public inbound ports | None / None |
 
-Subnet deployment and validation status is recorded in the deployment log. The word `prod` in the virtual network name is a naming choice for this simulated environment; this is a lab, not a production workload.
+The word `prod` in the virtual network name is a naming choice for this simulated environment; this is a lab, not a production workload. See the deployment log for validation gaps and the Azure VM Agent warning that still needs investigation.
 
 ## Repository guide
 
