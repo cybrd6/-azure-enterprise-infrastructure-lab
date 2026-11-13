@@ -1,29 +1,17 @@
-# Terraform — Existing Azure Infrastructure
+# Terraform — Azure Enterprise Infrastructure Lab
 
-This directory contains the Terraform configuration used to adopt the existing Azure lab resources without recreating them.
-
-## Current status
-
-**Terraform adoption complete.** The user imported the existing resource group, VNet, subnets, NSGs, subnet-to-NSG associations, management NIC, and Windows Server VM into local Terraform state. The final `terraform validate` succeeded and the final plan reported:
-
-```text
-Plan: 0 to add, 0 to change, 0 to destroy.
-```
-
-No `terraform apply` was run because the goal was to reconcile existing infrastructure, not make changes.
+This directory contains the Terraform configuration for the existing Azure lab and the resources added during identity, secrets-management, and monitoring implementation.
 
 ## Files
 
-- `versions.tf` — Terraform and AzureRM provider version constraints.
+- `main.tf` — resource group, network, NSGs, management VM, managed identity, RBAC assignments, Key Vault, deletion lock, Log Analytics workspace, and Key Vault diagnostic settings. Resources include short comments describing their purpose and security significance.
+- `variables.tf` — sensitive `admin_password` input.
 - `providers.tf` — AzureRM provider configuration; authentication uses the Azure CLI session.
-- `main.tf` — existing Azure resources represented in Terraform.
-- `variables.tf` — sensitive administrator password input declaration.
-- `terraform.tfvars.example` — safe template; copy to local `terraform.tfvars` and replace the placeholder.
-- `.gitignore` — excludes local state, provider cache, saved plans, and real variable files.
+- `versions.tf` — Terraform and AzureRM provider version constraints.
 
-## Local setup
+## Commands
 
-From this directory in PowerShell:
+Run from this directory in PowerShell:
 
 ```powershell
 az login
@@ -34,19 +22,25 @@ terraform validate
 terraform plan
 ```
 
-The Azure CLI must be authenticated to the intended subscription before running Terraform operations.
+Review the entire plan before applying. Do not proceed if Terraform proposes unexpected replacement or destruction.
 
 ## Secret and state handling
 
-- The actual administrator password belongs only in the local `terraform.tfvars`.
-- Never commit `terraform.tfvars`, state files, state backups, `.terraform/`, saved plans, credentials, or access tokens.
+- Keep the actual `terraform.tfvars` local and out of Git.
+- Never commit `terraform.tfstate`, state backups, `.terraform/`, saved plans, credentials, or access tokens.
 - Terraform state is local at this stage and should be backed up securely.
-- Do not commit subscription or tenant identifiers unnecessarily.
+- Do not publish unredacted subscription/tenant identifiers or passwords.
 
-## Safety
+## Important implementation notes
 
-A Terraform plan must be reviewed before any apply. Import and plan are not deployment. Do not run `terraform apply` unless a deliberate infrastructure change is intended and its full plan has been reviewed. Never use `terraform destroy` for this lab's adoption workflow.
+- The VM's system-assigned managed identity has Reader at the resource-group scope and Key Vault Secrets User at the Key Vault scope.
+- The lab operator's Entra user has Key Vault Secrets Officer scoped to the Key Vault for creating and managing test secrets.
+- Key Vault uses RBAC, 7-day soft delete, purge protection, and a CanNotDelete management lock.
+- Key Vault public network access is enabled at present. RBAC controls authorization, but network isolation has not been implemented.
+- Key Vault diagnostic settings route AuditEvent logs and AllMetrics to Log Analytics. The workspace is deployed; successful ingestion/query validation is still pending.
 
-## Next phase
+## Current validation status
 
-Network security hardening: design least-privilege NSG rules for the application and management subnets, then test allowed and denied traffic. Do not claim this work is complete until the rules and tests are actually performed.
+Terraform resources were applied successfully during the guided lab. Key Vault role assignments, deletion lock, workspace settings, and diagnostic-setting configuration were verified. A test secret was created and retrieved. The first Log Analytics query returned no audit records; ingestion delay or configuration still needs investigation.
+
+Never run `terraform destroy` for this project. Preserve existing resources and inspect every plan before applying.
