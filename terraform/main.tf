@@ -168,7 +168,7 @@ resource "azurerm_role_assignment" "mgmt_keyvault_secrets" {
 resource "azurerm_role_assignment" "user_keyvault_secrets_officer" {
   scope                = azurerm_key_vault.contoso.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = "28d9ac9a-6bcf-4dc3-87ad-cdbf35d74546"
+  principal_id         = var.operator_object_id
   principal_type       = "User"
 }
 
