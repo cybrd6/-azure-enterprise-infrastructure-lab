@@ -7,7 +7,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 > **Primary region:** Central US  
 > **Resource group:** `rg-contoso-cloud-lab`  
 > **Primary platform:** Microsoft Azure  
-> **Infrastructure as Code (IaC):** Terraform adoption in progress  
+> **Infrastructure as Code (IaC):** Existing Azure resources imported into Terraform; clean plan verified  
 > **Cost constraint:** Keep the lab within the available trial-credit budget; avoid unnecessary paid services.
 
 ## Project objectives
@@ -28,9 +28,9 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 | Phase | Work | Main evidence | Status |
 |---|---|---|---|
 | 1 | Foundation, resource group, budget guardrails, architecture | Resource group, tags, cost plan | Complete |
-| 2 | VNet, subnets, NSGs, network validation | Address plan, effective rules, connectivity tests | Configuration complete; traffic validation pending |
+| 2 | VNet, subnets, NSGs, network validation | Address plan, effective rules, connectivity tests | Network resources configured; custom rules and traffic validation pending |
 | 3 | Windows Server workload and secure administration | VM configuration, patch state, restricted admin access | VM deployed and deallocated; administration and hardening pending |
-| 3A | Terraform adoption of existing Azure infrastructure | Terraform configuration, imported state, clean plan | In progress — CLI authenticated, provider initialized, resource group successfully imported and listed in Terraform state |
+| 3A | Terraform adoption of existing Azure infrastructure | Terraform configuration, imported state, clean plan | Complete — all listed existing resources imported; `terraform validate` passed; final plan: 0 add, 0 change, 0 destroy |
 | 4 | Entra ID, Azure RBAC, least privilege | Role assignments and access tests | Planned |
 | 5 | Secure Azure Storage | Public-access restrictions, authorization and encryption review | Planned |
 | 6 | Logging, monitoring, and security investigation | Diagnostic settings, Log Analytics queries, alert evidence | Planned |
@@ -39,7 +39,7 @@ A hands-on, portfolio-focused Azure project demonstrating the design, deployment
 | 9 | Security baseline and compliance review | Azure Policy/Defender recommendations review and control matrix | Planned |
 | 10 | PowerShell, IaC refinement, final validation, and portfolio publication | Reusable code, diagrams, evidence, lessons learned | Planned |
 
-Terraform adoption is intended to bring existing resources under code management, not recreate the Azure environment. The existing resource group was successfully imported and confirmed in Terraform state. A configuration-versus-state plan review is the next validation step. No Terraform apply has been performed.
+Terraform adoption brought the existing Azure resources under code management without recreating them. The resource group, VNet, both subnets, both NSGs, both subnet-to-NSG associations, management NIC, and Windows VM were imported into Terraform state. `terraform validate` succeeded, and the final `terraform plan` reported **0 to add, 0 to change, 0 to destroy**. No `terraform apply` was needed or run; the clean plan confirms the configuration matches the imported infrastructure.
 
 ## Current environment
 
@@ -68,7 +68,10 @@ The word `prod` in the VNet name is a naming choice for this simulated environme
 - Azure resource inventory and resource group properties were inspected using read-only Azure CLI commands.
 - Local Terraform configuration created: `versions.tf`, `providers.tf`, and `main.tf`.
 - AzureRM provider initialized with `terraform init`; `terraform fmt` and `terraform validate` succeeded.
-- Resource group successfully imported and confirmed in Terraform state; plan review remains pending.
+- Existing resources imported and reconciled: resource group, VNet, both subnets, both NSGs, both subnet/NSG associations, management NIC, and Windows VM.
+- `variables.tf` declares the sensitive `admin_password` input; the actual password is stored only in the local, ignored `terraform.tfvars` file and is not committed.
+- `terraform fmt`, `terraform validate`, and `terraform plan` succeeded. Final plan: **0 to add, 0 to change, 0 to destroy**.
+- No `terraform apply` was run because no infrastructure changes were required.
 - No `terraform apply` has been run. Do not commit Terraform state or credentials.
 
 ## Repository guide
