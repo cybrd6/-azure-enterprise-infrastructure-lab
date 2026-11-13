@@ -1,121 +1,100 @@
-# Terraform Adoption Plan — Existing Azure Infrastructure
+# Terraform Adoption — Completed
 
 ## Objective
 
-Bring the Azure resources already created for this lab under Terraform management **without rebuilding, replacing, or deleting them**. This is a safe-adoption exercise, not a fresh deployment.
+Bring the Azure resources already created for this lab under Terraform management without rebuilding, replacing, or deleting them.
 
-**Current status:** Planned. Terraform has not yet been installed, initialized, imported, or applied in this project.
+<badge>Complete</badge> The existing resources have been imported into local Terraform state, the configuration has been reconciled, and the final plan is clean.
 
-## Existing environment to preserve
+## Environment
 
-- Subscription: use the currently selected Azure trial subscription; do not publish its ID.
-- Resource group: `rg-contoso-cloud-lab`.
-- Region: Central US.
-- VNet: `vnet-contoso-prod`, address space `10.10.0.0/16`.
-- Subnets: `sn-app` (`10.10.1.0/24`) and `sn-mgmt` (`10.10.2.0/24`).
-- NSGs: `nsg-app` associated with `sn-app`; `nsg-mgmt` associated with `sn-mgmt`.
-- VM: `vm-mgmt-01`, Windows Server 2025 Datacenter: Azure Edition, `Standard_D2as_v7`, private IP observed as `10.10.2.4`, no public IP, no public inbound ports.
-- VM was last confirmed **Stopped (deallocated)**. Keep it deallocated unless a specific validation task requires it.
+- **Resource group:** `rg-contoso-cloud-lab`
+- **Region:** Central US
+- **VNet:** `vnet-contoso-prod` — `10.10.0.0/16`
+- **Application subnet:** `sn-app` — `10.10.1.0/24`
+- **Management subnet:** `sn-mgmt` — `10.10.2.0/24`
+- **NSGs:** `nsg-app` and `nsg-mgmt`, each associated with its matching subnet
+- **Management NIC:** `vm-mgmt-01787`
+- **VM:** `vm-mgmt-01` — Windows Server 2025 Datacenter: Azure Edition, `Standard_D2as_v7`
+- **VM network placement:** `sn-mgmt`; no public IP and no public inbound ports
+- **Last confirmed VM power state:** Stopped (deallocated)
 
-The exact Azure resource IDs and full configuration must be read from the live subscription before writing import declarations. Do not guess resource IDs, VM/NIC/disk relationships, or provider attributes.
+## Workstation and provider
 
-## Planned local project layout
+- Terraform CLI v1.17.2 on Windows AMD64.
+- Azure CLI installed and authenticated to the intended Azure subscription.
+- AzureRM provider source: `hashicorp/azurerm`.
+- Provider version constraint: `~> 4.0`.
+- Authentication uses the Azure CLI session; credentials are not embedded in provider configuration.
+
+## Imported resources
+
+| Azure resource | Terraform address | Status |
+|---|---|---|
+| Resource group | `azurerm_resource_group.contoso` | Imported |
+| Virtual network | `azurerm_virtual_network.contoso` | Imported |
+| Application subnet | `azurerm_subnet.app` | Imported |
+| Management subnet | `azurerm_subnet.mgmt` | Imported |
+| Application NSG | `azurerm_network_security_group.app` | Imported |
+| Management NSG | `azurerm_network_security_group.mgmt` | Imported |
+| Application subnet NSG association | `azurerm_subnet_network_security_group_association.app` | Imported |
+| Management subnet NSG association | `azurerm_subnet_network_security_group_association.mgmt` | Imported |
+| Management NIC | `azurerm_network_interface.mgmt` | Present in Terraform state |
+| Windows management VM | `azurerm_windows_virtual_machine.mgmt` | Imported |
+
+## Configuration and validation performed
+
+- Created and maintained Terraform configuration in the local `terraform/` directory.
+- Initialized the AzureRM provider with `terraform init`.
+- Formatted configuration with `terraform fmt`.
+- Declared the VM administrator password as a sensitive input variable in `variables.tf`.
+- Stored the actual administrator password in local `terraform.tfvars`; the real file is excluded from Git.
+- Ran `terraform validate` successfully.
+- Imported the existing VM after the supporting network resources were tracked.
+- Reconciled the VM configuration with the imported Azure resource, including reboot setting, additional capabilities, and boot diagnostics.
+- Ran a final `terraform plan`.
+
+### Final plan result
 
 ```text
-terraform/
-├── README.md
-├── providers.tf
-├── versions.tf
-├── variables.tf
-├── main.tf
-├── outputs.tf
-├── terraform.tfvars.example
-└── .gitignore
+Plan: 0 to add, 0 to change, 0 to destroy.
 ```
 
-The exact files and module structure may change as the resource configuration is inspected.
+**No `terraform apply` was run.** This phase was an import and reconciliation exercise. Because the final plan contained no changes, an apply was unnecessary.
 
-## Adoption workflow
+## State and secret protection
 
-### 1. Prepare the workstation
+- Terraform state is local to the user's workstation at this stage.
+- Treat state files and backups as sensitive; they can contain infrastructure metadata and secret values.
+- The actual `terraform.tfvars` file must not be committed.
+- The Terraform `.gitignore` excludes `.terraform/`, state files, saved plans, and real `.tfvars` files.
+- Do not commit passwords, access tokens, private keys, state files, or unredacted subscription/tenant identifiers.
+- No remote backend or additional Azure storage resource was created as part of this phase.
 
-- Install a current stable Terraform CLI and Azure CLI.
-- Verify both tools from PowerShell.
-- Sign in using `az login`.
-- Confirm the active subscription with `az account show`; if needed, select the intended subscription explicitly.
-- Never paste access tokens, credentials, or unredacted subscription/tenant details into GitHub or chat.
+## Scope boundaries — not yet completed
 
-**Definitions:** Terraform CLI is the command-line tool that reads configuration and manages state. Azure CLI is Microsoft's command-line interface for inspecting and managing Azure resources.
+A clean Terraform plan confirms that the declared resources match the imported infrastructure. It does **not** establish that the workload is fully secure or operational.
 
-### 2. Inventory the live resources
+The following work remains for later phases:
 
-Use Azure CLI read commands to inspect resource IDs and configuration, including the resource group, VNet, subnets, NSGs, VM, network interface, and OS disk. Capture only the properties required to accurately represent the resources in Terraform.
+- Design least-privilege inbound and outbound NSG rules.
+- Validate allowed and denied traffic between subnets and to/from the VM.
+- Investigate the previously observed Azure VM Agent readiness warning.
+- Verify outbound connectivity and Windows Update behavior.
+- Establish and test secure administrative access.
+- Configure monitoring, logging, identity controls, and subsequent security assessments.
 
-Read-only inventory examples:
+## Completion checklist
 
-```powershell
-az account show --query "{name:name, state:state}" -o table
-az resource list --resource-group rg-contoso-cloud-lab --query "[].{name:name,type:type,id:id}" -o table
-az vm show --resource-group rg-contoso-cloud-lab --name vm-mgmt-01 -o json
-az network vnet show --resource-group rg-contoso-cloud-lab --name vnet-contoso-prod -o json
-az network nsg list --resource-group rg-contoso-cloud-lab -o table
-```
+- [x] Terraform and Azure CLI installed and verified.
+- [x] Azure CLI authenticated to the intended subscription.
+- [x] Existing Azure resources inventoried.
+- [x] Terraform configuration authored for existing resources.
+- [x] Existing resources imported into Terraform state.
+- [x] Sensitive password input kept out of version control.
+- [x] `terraform fmt` completed.
+- [x] `terraform validate` succeeded.
+- [x] Final plan reviewed: 0 add, 0 change, 0 destroy.
+- [x] No unintended apply, replacement, or destruction performed.
 
-These commands inspect configuration; they do not deploy or modify resources. Review output locally and redact sensitive identifiers before sharing.
-
-### 3. Write configuration before importing
-
-- Configure the AzureRM provider and pin a tested provider version.
-- Define Terraform resource blocks that accurately represent the existing resources.
-- Include dependencies and properties such as tags, address spaces, subnet ranges, NSG associations, VM image/size, NIC, OS disk, security profile, patch settings, identity state, and boot diagnostics where applicable.
-- Use variables for reusable, non-secret values.
-- Do not assume importing a resource automatically generates complete Terraform configuration. Import records the resource in state; matching HCL still needs to be authored and reconciled.
-
-### 4. Protect Terraform state
-
-- Start with local state for this small lab unless there is a clear reason to use a remote backend.
-- Treat state as sensitive: it may contain infrastructure details and secret values.
-- Never commit `terraform.tfstate`, `terraform.tfstate.backup`, `.terraform/`, saved plan files, credentials, or real `.tfvars` files.
-- Commit only reviewed HCL, safe example variable files, and documentation.
-- Back up state securely. Do not add a remote backend or extra Azure storage resource without checking its cost and need.
-
-### 5. Import existing resources
-
-- Use each resource's exact Azure resource ID from the inventory.
-- Ensure a matching Terraform resource block exists for each import.
-- Import resources individually or through carefully reviewed import blocks.
-- Include the VM's related NIC and OS disk resources only after understanding how the AzureRM provider models the VM and its dependencies.
-- Keep the VM deallocated during configuration and import unless a read-only inspection requires otherwise.
-
-### 6. Reconcile and plan
-
-Run `terraform fmt`, `terraform validate`, and `terraform plan`. Review every proposed change.
-
-**Stop condition:** Do not apply a plan that proposes an unexpected destroy, replacement, recreation, or disruptive modification. In particular, any plan showing `-/+` or resource destruction must be investigated before proceeding. A clean or understood no-change plan is the desired initial adoption milestone.
-
-### 7. Apply only after explicit review
-
-Import and plan are not the same as deployment. Do not run `terraform apply` simply to make the plan disappear. Apply only a fully reviewed, understood plan when a deliberate change is intended. Never use `terraform destroy` for this adoption exercise.
-
-## Security and cost guardrails
-
-- Terraform import and plan are not intended to recreate the Azure resources.
-- Do not create Bastion, NAT Gateway, VPN Gateway, AKS, or a remote state storage account just to complete this exercise.
-- Keep the VM deallocated when idle; disk storage may continue to incur charges.
-- Never commit state, credentials, private keys, tokens, or real secret-bearing variable files.
-- Do not make public RDP/SSH exposure part of the Terraform configuration.
-- Confirm the Azure subscription context before any command that can change resources.
-
-## Completion criteria
-
-- [ ] Terraform and Azure CLI installed and version-checked.
-- [ ] Azure CLI authenticated to the intended trial subscription.
-- [ ] Existing Azure resource IDs and relevant properties inventoried.
-- [ ] Terraform configuration authored to match existing infrastructure.
-- [ ] Existing resources imported without recreation.
-- [ ] State protected from Git and stored/backed up safely.
-- [ ] `terraform fmt` and `terraform validate` pass.
-- [ ] `terraform plan` reviewed with no unintended replacement or destruction.
-- [ ] Documentation records the commands, results, limitations, and sanitized evidence.
-
-Do not mark this phase complete until the import and plan have actually been validated.
+**Next section:** Network security hardening — design and test NSG rules for the application and management subnets.
