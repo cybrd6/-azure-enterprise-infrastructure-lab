@@ -1,0 +1,3 @@
+# Copy this file to terraform.tfvars and enter the VM administrator password.
+# Never commit the real terraform.tfvars file.
+admin_password = "REPLACE_WITH_YOUR_VM_ADMIN_PASSWORD"
