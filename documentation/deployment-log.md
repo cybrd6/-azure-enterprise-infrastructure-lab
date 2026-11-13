@@ -141,3 +141,59 @@ terraform import azurerm_resource_group.contoso "/subscriptions/$(az account sho
 - Add and verify a Terraform-specific `.gitignore` before committing local Terraform work.
 - No remote backend or additional Azure storage resource has been created.
 - Keep the VM deallocated while adoption work continues.
+
+
+## Day 4 — Terraform import and reconciliation completed
+
+### Existing Azure resources adopted into Terraform
+
+The Terraform configuration was expanded to represent the existing Azure infrastructure, and each resource was imported into the matching Terraform address. The following resources are now tracked in local Terraform state:
+
+| Azure resource | Terraform address | Result |
+|---|---|---|
+| Resource group `rg-contoso-cloud-lab` | `azurerm_resource_group.contoso` | Imported |
+| VNet `vnet-contoso-prod` | `azurerm_virtual_network.contoso` | Imported |
+| Subnet `sn-app` | `azurerm_subnet.app` | Imported |
+| Subnet `sn-mgmt` | `azurerm_subnet.mgmt` | Imported |
+| NSG `nsg-app` | `azurerm_network_security_group.app` | Imported |
+| NSG `nsg-mgmt` | `azurerm_network_security_group.mgmt` | Imported |
+| App subnet / NSG association | `azurerm_subnet_network_security_group_association.app` | Imported |
+| Management subnet / NSG association | `azurerm_subnet_network_security_group_association.mgmt` | Imported |
+| Management NIC `vm-mgmt-01787` | `azurerm_network_interface.mgmt` | Already present in Terraform state; retained |
+| VM `vm-mgmt-01` | `azurerm_windows_virtual_machine.mgmt` | Imported |
+
+### Configuration and validation
+
+- **Terraform CLI:** v1.17.2 on Windows AMD64.
+- **AzureRM provider:** `hashicorp/azurerm`, version constraint `~> 4.0`.
+- **Authentication:** Azure CLI session; no credentials or subscription identifiers are recorded in this log.
+- **VM administrator input:** `admin_password` is declared as a sensitive Terraform variable in `variables.tf`. The actual password is held in the local `terraform.tfvars` file and must not be committed.
+- **Validation:** `terraform validate` succeeded after adding the variable declaration.
+- **Reconciliation:** The initial VM plans exposed configuration drift for reboot setting, additional capabilities, and boot diagnostics. The configuration was updated to match the existing VM.
+- **Final plan:** Terraform reported **0 to add, 0 to change, 0 to destroy**.
+- **Apply:** No `terraform apply` was run or needed. The purpose of this phase was to import and reconcile existing infrastructure, not modify or recreate it.
+- **VM power state:** The VM was deallocated after the password reset workflow; keep it deallocated when not actively required.
+
+### Terraform state and secret handling
+
+- The successful import and clean plan were performed against local Terraform state on the user's workstation.
+- The actual `terraform.tfvars` file contains the administrator password and must remain local.
+- The Terraform-specific `.gitignore` excludes `.terraform/`, state files, saved plans, and real `.tfvars` files while allowing example variable files.
+- Do not publish the state file, backup state, real `.tfvars`, passwords, access tokens, or unredacted subscription/tenant identifiers.
+- A clean plan is evidence that the current HCL matches the imported resources; it does not prove network traffic, guest OS health, VM agent readiness, or administrative access have been tested.
+
+### Terraform adoption completion checklist
+
+- [x] Terraform CLI installed and verified.
+- [x] Azure CLI authenticated to the intended subscription.
+- [x] Existing resource inventory completed.
+- [x] Terraform configuration authored for the existing resources.
+- [x] Existing resources imported into Terraform state.
+- [x] Sensitive administrator password kept outside version-controlled configuration.
+- [x] `terraform validate` succeeded.
+- [x] Final `terraform plan` returned 0 add, 0 change, 0 destroy.
+- [x] No unnecessary apply or resource recreation performed.
+- [ ] Verify that local Terraform state is backed up securely before any workstation changes.
+- [ ] Continue with NSG custom-rule design and network traffic validation.
+
+**Phase result: Complete.** Terraform now tracks the existing lab infrastructure. The next project section is network security hardening: design least-privilege NSG rules, then validate allowed and denied traffic. Do not describe custom NSG hardening or traffic validation as complete yet.
