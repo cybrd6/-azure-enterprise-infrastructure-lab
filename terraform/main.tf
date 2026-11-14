@@ -1,3 +1,5 @@
+
+# Resource group containing the enterprise cloud lab.
 resource "azurerm_resource_group" "contoso" {
   name     = "rg-contoso-cloud-lab"
   location = "Central US"
@@ -10,6 +12,7 @@ resource "azurerm_resource_group" "contoso" {
   }
 }
 
+# Main virtual network.
 resource "azurerm_virtual_network" "contoso" {
   name                = "vnet-contoso-prod"
   location            = azurerm_resource_group.contoso.location
@@ -18,6 +21,7 @@ resource "azurerm_virtual_network" "contoso" {
   tags                = {}
 }
 
+# Application subnet.
 resource "azurerm_subnet" "app" {
   name                            = "sn-app"
   resource_group_name             = azurerm_resource_group.contoso.name
@@ -26,6 +30,7 @@ resource "azurerm_subnet" "app" {
   default_outbound_access_enabled = false
 }
 
+# Management subnet.
 resource "azurerm_subnet" "mgmt" {
   name                            = "sn-mgmt"
   resource_group_name             = azurerm_resource_group.contoso.name
@@ -34,29 +39,33 @@ resource "azurerm_subnet" "mgmt" {
   default_outbound_access_enabled = false
 }
 
+# Application subnet network security group.
 resource "azurerm_network_security_group" "app" {
   name                = "nsg-app"
   location            = azurerm_resource_group.contoso.location
   resource_group_name = azurerm_resource_group.contoso.name
 }
 
+# Management subnet network security group.
 resource "azurerm_network_security_group" "mgmt" {
   name                = "nsg-mgmt"
   location            = azurerm_resource_group.contoso.location
   resource_group_name = azurerm_resource_group.contoso.name
 }
 
+# Attach application NSG to application subnet.
 resource "azurerm_subnet_network_security_group_association" "app" {
   subnet_id                 = azurerm_subnet.app.id
   network_security_group_id = azurerm_network_security_group.app.id
 }
 
+# Attach management NSG to management subnet.
 resource "azurerm_subnet_network_security_group_association" "mgmt" {
   subnet_id                 = azurerm_subnet.mgmt.id
   network_security_group_id = azurerm_network_security_group.mgmt.id
 }
 
-# Prevent management subnet traffic from entering the application subnet.
+# Deny management subnet traffic entering application subnet.
 resource "azurerm_network_security_rule" "deny_mgmt_to_app" {
   name                        = "Deny-Mgmt-To-App"
   priority                    = 4000
@@ -71,7 +80,7 @@ resource "azurerm_network_security_rule" "deny_mgmt_to_app" {
   network_security_group_name = azurerm_network_security_group.app.name
 }
 
-# Prevent application subnet traffic from entering the management subnet.
+# Deny application subnet traffic entering management subnet.
 resource "azurerm_network_security_rule" "deny_app_to_mgmt" {
   name                        = "Deny-App-To-Mgmt"
   priority                    = 4000
@@ -86,6 +95,7 @@ resource "azurerm_network_security_rule" "deny_app_to_mgmt" {
   network_security_group_name = azurerm_network_security_group.mgmt.name
 }
 
+# Management VM network interface.
 resource "azurerm_network_interface" "mgmt" {
   name                           = "vm-mgmt-01787"
   location                       = azurerm_resource_group.contoso.location
@@ -106,6 +116,13 @@ resource "azurerm_network_interface" "mgmt" {
   }
 }
 
+# Explicitly manage the existing NSG association on the VM NIC.
+resource "azurerm_network_interface_security_group_association" "mgmt" {
+  network_interface_id      = azurerm_network_interface.mgmt.id
+  network_security_group_id = azurerm_network_security_group.mgmt.id
+}
+
+# Windows management VM with host encryption and Trusted Launch.
 resource "azurerm_windows_virtual_machine" "mgmt" {
   name                  = "vm-mgmt-01"
   computer_name         = "vm-mgmt-01"
@@ -120,7 +137,8 @@ resource "azurerm_windows_virtual_machine" "mgmt" {
     type = "SystemAssigned"
   }
 
-  reboot_setting = "IfRequired"
+  encryption_at_host_enabled = true
+  reboot_setting             = "IfRequired"
 
   additional_capabilities {
     hibernation_enabled = false
@@ -157,6 +175,7 @@ resource "azurerm_windows_virtual_machine" "mgmt" {
   }
 }
 
+# Give the VM identity read access to the resource group.
 resource "azurerm_role_assignment" "mgmt_reader" {
   scope                = azurerm_resource_group.contoso.id
   role_definition_name = "Reader"
@@ -164,8 +183,10 @@ resource "azurerm_role_assignment" "mgmt_reader" {
   principal_type       = "ServicePrincipal"
 }
 
+# Retrieve current Azure tenant and subscription information.
 data "azurerm_client_config" "current" {}
 
+# Key Vault with RBAC, purge protection, and restricted network access.
 resource "azurerm_key_vault" "contoso" {
   name                = "kvcontosolab655d6"
   location            = azurerm_resource_group.contoso.location
@@ -173,10 +194,18 @@ resource "azurerm_key_vault" "contoso" {
   tenant_id           = data.azurerm_client_config.current.tenant_id
   sku_name            = "standard"
 
-  rbac_authorization_enabled    = true
-  soft_delete_retention_days    = 7
-  purge_protection_enabled      = true
+  rbac_authorization_enabled = true
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = true
+
   public_network_access_enabled = true
+
+  # Deny network access by default; allow the operator's current public IP.
+  network_acls {
+    bypass         = "AzureServices"
+    default_action = "Deny"
+    ip_rules       = [var.operator_public_ip]
+  }
 
   tags = {
     Environment = "Lab"
@@ -186,6 +215,7 @@ resource "azurerm_key_vault" "contoso" {
   }
 }
 
+# Allow the management VM identity to retrieve Key Vault secrets.
 resource "azurerm_role_assignment" "mgmt_keyvault_secrets" {
   scope                = azurerm_key_vault.contoso.id
   role_definition_name = "Key Vault Secrets User"
@@ -193,6 +223,7 @@ resource "azurerm_role_assignment" "mgmt_keyvault_secrets" {
   principal_type       = "ServicePrincipal"
 }
 
+# Protect Key Vault against accidental deletion.
 resource "azurerm_management_lock" "keyvault_protection" {
   name       = "lock-keyvault-delete"
   scope      = azurerm_key_vault.contoso.id
@@ -200,13 +231,15 @@ resource "azurerm_management_lock" "keyvault_protection" {
   notes      = "Prevents accidental deletion of the Key Vault."
 }
 
+# Give the operator permission to manage Key Vault secrets.
 resource "azurerm_role_assignment" "user_keyvault_secrets_officer" {
   scope                = azurerm_key_vault.contoso.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = "28d9ac9a-6bcf-4dc3-87ad-cdbf35d74546"
+  principal_id         = var.operator_object_id
   principal_type       = "User"
 }
 
+# Central workspace for security and diagnostic events.
 resource "azurerm_log_analytics_workspace" "contoso" {
   name                = "law-contoso-cloud-lab"
   location            = azurerm_resource_group.contoso.location
@@ -221,6 +254,7 @@ resource "azurerm_log_analytics_workspace" "contoso" {
   }
 }
 
+# Send Key Vault audit events and metrics to Log Analytics.
 resource "azurerm_monitor_diagnostic_setting" "keyvault" {
   name                       = "diag-keyvault-audit"
   target_resource_id         = azurerm_key_vault.contoso.id
@@ -235,7 +269,7 @@ resource "azurerm_monitor_diagnostic_setting" "keyvault" {
   }
 }
 
-# Email notification Action Group
+# Email action group for Azure Monitor alerts.
 resource "azurerm_monitor_action_group" "contoso" {
   name                = "ag-contoso-alerts"
   resource_group_name = azurerm_resource_group.contoso.name
@@ -243,12 +277,12 @@ resource "azurerm_monitor_action_group" "contoso" {
 
   email_receiver {
     name                    = "Jayden"
-    email_address           = "jaydenstewart1400@gmail.com"
+    email_address           = var.alert_email
     use_common_alert_schema = true
   }
 }
 
-# Azure Monitor alert for failed Key Vault secret retrievals
+# Detect failed Key Vault secret retrieval attempts.
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "keyvault_failed_secret_access" {
   name                = "alert-kv-failed-secret-access"
   resource_group_name = azurerm_resource_group.contoso.name
@@ -287,8 +321,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "keyvault_failed_secre
   }
 }
 
-
-# Dedicated storage account with secure transport and private blob access.
+# Storage account with HTTPS-only traffic and restricted network access.
 resource "azurerm_storage_account" "contoso" {
   name                     = "contosolabstorage655d6"
   resource_group_name      = azurerm_resource_group.contoso.name
@@ -296,10 +329,17 @@ resource "azurerm_storage_account" "contoso" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  min_tls_version                  = "TLS1_2"
+  min_tls_version                 = "TLS1_2"
   https_traffic_only_enabled      = true
   allow_nested_items_to_be_public = false
-  public_network_access_enabled  = true
+  public_network_access_enabled   = true
+
+  # Deny network access by default; allow the operator's current public IP.
+  network_rules {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+    ip_rules       = [var.operator_public_ip]
+  }
 
   blob_properties {
     delete_retention_policy {
@@ -319,11 +359,30 @@ resource "azurerm_storage_account" "contoso" {
   }
 }
 
-# Grant the operator blob data access only to the private container.
+# Send Blob Storage read, write, and delete logs to Log Analytics.
+resource "azurerm_monitor_diagnostic_setting" "storage_blob" {
+  name                       = "diag-storage-blob-logs"
+  target_resource_id         = "${azurerm_storage_account.contoso.id}/blobServices/default"
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.contoso.id
+
+  enabled_log {
+    category = "StorageRead"
+  }
+
+  enabled_log {
+    category = "StorageWrite"
+  }
+
+  enabled_log {
+    category = "StorageDelete"
+  }
+}
+
+# Grant the operator data-plane access to the private Blob container.
 resource "azurerm_role_assignment" "user_storage_blob_contributor" {
   scope = "${azurerm_storage_account.contoso.id}/blobServices/default/containers/contoso-private-data"
 
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = "28d9ac9a-6bcf-4dc3-87ad-cdbf35d74546"
+  principal_id         = var.operator_object_id
   principal_type       = "User"
 }
