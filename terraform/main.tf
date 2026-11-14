@@ -286,3 +286,44 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "keyvault_failed_secre
     action_groups = [azurerm_monitor_action_group.contoso.id]
   }
 }
+
+
+# Dedicated storage account with secure transport and private blob access.
+resource "azurerm_storage_account" "contoso" {
+  name                     = "contosolabstorage655d6"
+  resource_group_name      = azurerm_resource_group.contoso.name
+  location                 = azurerm_resource_group.contoso.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  min_tls_version                  = "TLS1_2"
+  https_traffic_only_enabled      = true
+  allow_nested_items_to_be_public = false
+  public_network_access_enabled  = true
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+
+    container_delete_retention_policy {
+      days = 7
+    }
+  }
+
+  tags = {
+    Environment = "Lab"
+    ManagedBy   = "Terraform"
+    Owner       = "CloudEngineering"
+    Project     = "EnterpriseCloud"
+  }
+}
+
+# Grant the operator blob data access only to the private container.
+resource "azurerm_role_assignment" "user_storage_blob_contributor" {
+  scope = "${azurerm_storage_account.contoso.id}/blobServices/default/containers/contoso-private-data"
+
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = "28d9ac9a-6bcf-4dc3-87ad-cdbf35d74546"
+  principal_type       = "User"
+}
