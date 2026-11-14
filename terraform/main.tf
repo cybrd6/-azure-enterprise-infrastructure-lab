@@ -235,6 +235,19 @@ resource "azurerm_monitor_diagnostic_setting" "keyvault" {
 }
 
 
+# Sends Azure Monitor alert notifications to the confirmed email receiver.
+resource "azurerm_monitor_action_group" "contoso" {
+  name                = "ag-contoso-alerts"
+  resource_group_name = azurerm_resource_group.contoso.name
+  short_name          = "ContosoAG"
+
+  email_receiver {
+    name                    = "Jayden"
+    email_address           = "jaydenstewart1400@gmail.com"
+    use_common_alert_schema = true
+  }
+}
+
 # Azure Monitor alert for failed Key Vault secret retrievals.
 # Detects failed SecretGet operations (HTTP 400+) from the centralized audit stream.
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "keyvault_failed_secret_access" {
@@ -268,5 +281,10 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "keyvault_failed_secre
       minimum_failing_periods_to_trigger_alert = 1
       number_of_evaluation_periods             = 1
     }
+  }
+
+  # Routes fired alert notifications to the email Action Group above.
+  action {
+    action_groups = [azurerm_monitor_action_group.contoso.id]
   }
 }
