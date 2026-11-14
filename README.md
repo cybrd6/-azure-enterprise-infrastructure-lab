@@ -2,7 +2,7 @@
 
 A hands-on Azure portfolio project demonstrating network design, Windows Server infrastructure, identity and access management, secrets management, centralized monitoring, and security validation.
 
-> **Current project progress:** 90% — core infrastructure, Key Vault auditing, centralized logging, failed-secret-access detection, and email alert delivery are deployed and end-to-end tested.
+> **Current project progress:** 95% — core infrastructure, subnet-level network isolation rules, Key Vault auditing, centralized logging, failed-secret-access detection, and email alert delivery are deployed and verified.
 > **Environment:** Azure trial subscription · **Region:** Central US · **Resource group:** `rg-contoso-cloud-lab`
 > **Primary IaC:** Terraform with AzureRM provider `~> 4.0`
 
@@ -12,9 +12,9 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 |---|---|---|
 | Resource organization | Resource group and tags | Deployed |
 | Network | VNet `10.10.0.0/16`; app subnet `10.10.1.0/24`; management subnet `10.10.2.0/24` | Deployed; both subnets have default outbound access disabled |
-| Network filtering | `nsg-app` and `nsg-mgmt` associated to their subnets | Default rules reviewed; custom least-privilege rules and traffic tests remain outstanding |
+| Network filtering | `nsg-app` and `nsg-mgmt` associated to their subnets; `Deny-Mgmt-To-App` and `Deny-App-To-Mgmt` inbound rules at priority 4000 | Both custom rules deployed and verified in Azure; live packet-flow testing remains outstanding |
 | Compute | Windows Server 2025 management VM, private NIC, no public IP, Trusted Launch, Secure Boot, vTPM | Deployed; currently deallocated; guest access/agent and network tests remain outstanding |
-| Terraform | Existing infrastructure imported; VM managed identity and later resources represented in code | Terraform validate/plan/apply used during implementation; re-run final validation before portfolio release |
+| Terraform | Existing infrastructure imported; VM managed identity and later resources represented in code | Terraform validate/plan/apply used during implementation; network-rule plan showed 2 additions, 0 changes, 0 destructions |
 | Managed identity / RBAC | VM system-assigned identity; Reader at resource-group scope | Identity and role assignment verified |
 | Key Vault | `kvcontosolab655d6`; RBAC authorization; 7-day soft delete; purge protection; deletion lock | Deployed; lock and role assignments verified |
 | Key Vault data access | VM identity: Key Vault Secrets User; operator: Key Vault Secrets Officer | Test secret created and read successfully using operator account |
@@ -26,16 +26,17 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 ## Architecture summary
 
 - **VNet and subnets** separate application and management address spaces.
-- **NSGs** provide subnet-level traffic filtering. Custom rule hardening and connectivity validation are still pending.
+- **NSGs** are associated at the subnet level. Two explicit inbound deny rules block traffic from the management subnet to the application subnet and vice versa. These rules have priority 4000, ahead of Azure's default virtual-network inbound allow rule. Live packet-flow testing has not yet been performed.
 - **Management VM** has no public IP. Its system-assigned managed identity avoids embedding Azure service credentials in the VM.
-- **Azure RBAC** grants only Reader at the resource-group scope and Key Vault Secrets User at the vault scope to the VM identity.
+- **Azure RBAC** grants Reader at the resource-group scope and Key Vault Secrets User at the vault scope to the VM identity.
 - **Key Vault** centralizes secrets and uses RBAC, soft delete, purge protection, and a CanNotDelete lock. Public network access is currently enabled; this vault is not described as network-isolated.
-- **Log Analytics** is the central workspace. Key Vault diagnostic settings route audit events and metrics there; actual audit ingestion and KQL detection of failed secret retrievals have been validated.\n- **Azure Monitor alerting** evaluates failed Key Vault secret retrievals every five minutes. A confirmed email Action Group is connected, and an end-to-end test successfully delivered an alert notification.
+- **Log Analytics** is the central workspace. Key Vault diagnostic settings route audit events and metrics there; actual audit ingestion and KQL detection of failed secret retrievals have been validated.
+- **Azure Monitor alerting** evaluates failed Key Vault secret retrievals every five minutes. A confirmed email Action Group is connected, and an end-to-end test successfully delivered an alert notification.
 
 ## Terraform directory
 
-- `main.tf` — Azure resources, dependencies, and concise explanatory comments.
-- `variables.tf` — sensitive VM administrator password input.
+- `main.tf` — Azure resources, dependencies, and network isolation rules.
+- `variables.tf` — sensitive VM administrator password input and other configuration variables.
 - `providers.tf` — AzureRM provider configuration using the authenticated Azure CLI session.
 - `versions.tf` — Terraform and provider version constraints.
 - `terraform.tfvars` — local-only secret values; never commit.
@@ -43,14 +44,13 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 
 ## Remaining work
 
-1. Confirm Key Vault audit events are ingested and queryable in Log Analytics; troubleshoot if no records appear.
-2. Complete NSG rule design and allowed/denied traffic tests without broad internet exposure.
-3. Validate management VM agent health, secure administration, outbound connectivity, and Windows patch state.
-4. Complete secure Azure Storage configuration and access tests.
-5. Perform vulnerability discovery, remediation, and retesting.
-6. Complete local container image scanning with Docker/Trivy.
-7. Assess selected settings against a documented security baseline.
-8. Add sanitized screenshots, architecture evidence, final Terraform validation, and lessons learned.
+1. Perform controlled allowed/denied network traffic tests when a safe test path and running workload are available; management VM is currently deallocated.
+2. Validate management VM agent health, secure administration, outbound connectivity, and Windows patch state.
+3. Complete secure Azure Storage configuration and access tests.
+4. Perform vulnerability discovery, remediation, and retesting.
+5. Complete local container image scanning with Docker/Trivy.
+6. Assess selected settings against a documented security baseline.
+7. Add sanitized screenshots, architecture evidence, final Terraform validation, and lessons learned.
 
 ## Cost and security guardrails
 
