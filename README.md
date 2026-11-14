@@ -2,7 +2,7 @@
 
 A hands-on Azure portfolio project demonstrating network design, Windows Server infrastructure, identity and access management, secrets management, centralized monitoring, and security validation.
 
-> **Current project progress:** 77% — implementation and configuration are ahead of final evidence/validation.
+> **Current project progress:** 85% — core infrastructure, Key Vault auditing, centralized logging, and a failed-secret-access alert are deployed and verified; remaining work focuses on notifications, hardening, testing, and evidence.
 > **Environment:** Azure trial subscription · **Region:** Central US · **Resource group:** `rg-contoso-cloud-lab`
 > **Primary IaC:** Terraform with AzureRM provider `~> 4.0`
 
@@ -19,7 +19,7 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 | Key Vault | `kvcontosolab655d6`; RBAC authorization; 7-day soft delete; purge protection; deletion lock | Deployed; lock and role assignments verified |
 | Key Vault data access | VM identity: Key Vault Secrets User; operator: Key Vault Secrets Officer | Test secret created and read successfully using operator account |
 | Monitoring | Log Analytics workspace `law-contoso-cloud-lab`, PerGB2018, 30-day retention | Workspace deployed and settings verified |
-| Diagnostics | Key Vault AuditEvent and AllMetrics sent to Log Analytics | Diagnostic setting verified; query returned no events yet, ingestion still being investigated |
+| Diagnostics | Key Vault AuditEvent and AllMetrics sent to Log Analytics | Verified actual Key Vault audit records in `AzureDiagnostics`, including successful reads and a controlled 404 secret lookup; detection query confirmed the failed request |\n| Security alerting | Azure Monitor scheduled query alert `alert-kv-failed-secret-access` | Deployed and verified enabled at severity 2; evaluates every 5 minutes for `SecretGet` events with HTTP status 400+ |
 
 ## Architecture summary
 
@@ -28,7 +28,7 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 - **Management VM** has no public IP. Its system-assigned managed identity avoids embedding Azure service credentials in the VM.
 - **Azure RBAC** grants only Reader at the resource-group scope and Key Vault Secrets User at the vault scope to the VM identity.
 - **Key Vault** centralizes secrets and uses RBAC, soft delete, purge protection, and a CanNotDelete lock. Public network access is currently enabled; this vault is not described as network-isolated.
-- **Log Analytics** is the central workspace. Key Vault diagnostic settings route audit events and metrics there; actual event ingestion/query validation remains in progress.
+- **Log Analytics** is the central workspace. Key Vault diagnostic settings route audit events and metrics there; actual audit ingestion and KQL detection of failed secret retrievals have been validated.\n- **Azure Monitor alerting** evaluates failed Key Vault secret retrievals every five minutes. The alert is enabled at severity 2. No Action Group is configured yet, so email/SMS notifications are not currently sent.
 
 ## Terraform directory
 
