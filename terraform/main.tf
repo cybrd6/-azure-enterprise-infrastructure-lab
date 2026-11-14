@@ -233,3 +233,40 @@ resource "azurerm_monitor_diagnostic_setting" "keyvault" {
     category = "AllMetrics"
   }
 }
+
+
+# Azure Monitor alert for failed Key Vault secret retrievals.
+# Detects failed SecretGet operations (HTTP 400+) from the centralized audit stream.
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "keyvault_failed_secret_access" {
+  name                = "alert-kv-failed-secret-access"
+  resource_group_name = azurerm_resource_group.contoso.name
+  location            = azurerm_resource_group.contoso.location
+
+  evaluation_frequency = "PT5M"
+  window_duration      = "PT5M"
+  scopes               = [azurerm_log_analytics_workspace.contoso.id]
+
+  severity                = 2
+  enabled                 = true
+  auto_mitigation_enabled = true
+  description             = "Detects failed Key Vault secret retrieval requests."
+
+  criteria {
+    query = <<-QUERY
+      AzureDiagnostics
+      | where ResourceProvider == "MICROSOFT.KEYVAULT"
+      | where Category == "AuditEvent"
+      | where OperationName == "SecretGet"
+      | where httpStatusCode_d >= 400
+    QUERY
+
+    time_aggregation_method = "Count"
+    threshold               = 0
+    operator                = "GreaterThan"
+
+    failing_periods {
+      minimum_failing_periods_to_trigger_alert = 1
+      number_of_evaluation_periods             = 1
+    }
+  }
+}
