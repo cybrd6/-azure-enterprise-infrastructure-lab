@@ -22,6 +22,7 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 | Diagnostics | Key Vault AuditEvent and AllMetrics sent to Log Analytics | Verified actual Key Vault audit records in `AzureDiagnostics`, including successful reads and a controlled 404 secret lookup; detection query confirmed the failed request |
 | Security alerting | Azure Monitor scheduled query alert `alert-kv-failed-secret-access` | Deployed and verified enabled at severity 2; evaluates every 5 minutes for `SecretGet` events with HTTP status 400+ |
 | Notifications | Action Group `ag-contoso-alerts` with confirmed email receiver | End-to-end test successful: controlled Key Vault 404 generated, detected, alert fired, and email notification received |
+| Azure Storage | Storage account `contosolabstorage655d6`; HTTPS-only; TLS 1.2 minimum; anonymous blob access disabled; 7-day blob/container soft-delete retention | Deployed and verified; private container `contoso-private-data` created; container-scoped Storage Blob Data Contributor assigned to operator; authenticated upload, listing, and download succeeded; server-side encryption confirmed; anonymous request returned HTTP 409. Public network access remains enabled pending a tested private/network-restricted access path |
 
 ## Architecture summary
 
@@ -32,10 +33,11 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 - **Key Vault** centralizes secrets and uses RBAC, soft delete, purge protection, and a CanNotDelete lock. Public network access is currently enabled; this vault is not described as network-isolated.
 - **Log Analytics** is the central workspace. Key Vault diagnostic settings route audit events and metrics there; actual audit ingestion and KQL detection of failed secret retrievals have been validated.
 - **Azure Monitor alerting** evaluates failed Key Vault secret retrievals every five minutes. A confirmed email Action Group is connected, and an end-to-end test successfully delivered an alert notification.
+- **Azure Storage** uses HTTPS-only transport, TLS 1.2 minimum, disabled anonymous blob access, and 7-day soft-delete retention. The private `contoso-private-data` container has operator data access scoped through Storage Blob Data Contributor. Authenticated upload/list/download tests passed, server-side encryption was confirmed, and an unauthenticated request was rejected with HTTP 409. Public network access remains enabled; network-level isolation is still outstanding.
 
 ## Terraform directory
 
-- `main.tf` — Azure resources, dependencies, and network isolation rules.
+- `main.tf` — Azure resources, dependencies, network isolation rules, secured storage account, and storage RBAC.
 - `variables.tf` — sensitive VM administrator password input and other configuration variables.
 - `providers.tf` — AzureRM provider configuration using the authenticated Azure CLI session.
 - `versions.tf` — Terraform and provider version constraints.
@@ -46,7 +48,7 @@ A hands-on Azure portfolio project demonstrating network design, Windows Server 
 
 1. Perform controlled allowed/denied network traffic tests when a safe test path and running workload are available; management VM is currently deallocated.
 2. Validate management VM agent health, secure administration, outbound connectivity, and Windows patch state.
-3. Complete secure Azure Storage configuration and access tests.
+3. Restrict Storage network access after establishing and testing a private endpoint or another approved access path.
 4. Perform vulnerability discovery, remediation, and retesting.
 5. Complete local container image scanning with Docker/Trivy.
 6. Assess selected settings against a documented security baseline.
